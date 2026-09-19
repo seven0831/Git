@@ -130,6 +130,17 @@
   const postSave = document.getElementById('post-save');
   const postCancel = document.getElementById('post-cancel');
   const postError = document.getElementById('post-error');
+  const postFreshmanRow = document.getElementById('post-freshman-row');
+  const postFreshman = document.getElementById('post-freshman');
+
+  // 勾选"适合大一新生"仅在学习交流/项目组队板块可见
+  function updateFreshmanRow() {
+    const eligible = store.FRESHMAN_BOARD_IDS.indexOf(Number(postBoard.value)) >= 0;
+    postFreshmanRow.classList.toggle('hidden', !eligible);
+    if (!eligible) postFreshman.checked = false;
+  }
+
+  postBoard.addEventListener('change', updateFreshmanRow);
 
   function addImageRow(value) {
     if (postImages.children.length >= store.MAX_IMAGES) {
@@ -157,6 +168,8 @@
     postBoard.value = post ? post.board_id : store.BOARDS[0].id;
     postTitle.value = post ? post.title : '';
     postContent.value = post ? post.content : '';
+    postFreshman.checked = post ? post.freshman_friendly === true : false;
+    updateFreshmanRow();
     postImages.innerHTML = '';
     const images = post && post.images.length ? post.images : [''];
     images.forEach(addImageRow);
@@ -183,6 +196,7 @@
       title: postTitle.value,
       content: postContent.value,
       images: collectImages(),
+      freshmanFriendly: postFreshman.checked,
     };
     try {
       if (editingPostId === null) {
@@ -214,7 +228,7 @@
   postAddImage.addEventListener('click', () => addImageRow(''));
 
   /* ---------- 帖子列表视图 ---------- */
-  const listState = { boardId: null, keyword: '', sort: 'latest', page: 1 };
+  const listState = { boardId: null, keyword: '', sort: 'latest', page: 1, freshmanOnly: false };
 
   function renderPostCard(p) {
     const imgs = p.images
@@ -229,6 +243,7 @@
       '<a class="post-title-link" href="#/post/' + p.id + '">' + escapeHtml(p.title) + '</a>' +
       '<div class="post-meta">' +
       '<span class="board-badge">' + escapeHtml(boardName(p.board_id)) + '</span>' +
+      (p.freshman_friendly ? '<span class="freshman-badge">🎓 新生推荐</span>' : '') +
       '<span>' + escapeHtml(displayName(p)) + '</span>' +
       '<span>' + formatDate(p.created_at) + '</span>' +
       '</div>' +

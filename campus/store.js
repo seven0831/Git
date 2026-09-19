@@ -13,6 +13,8 @@ const BOARDS = [
 const PAGE_SIZE = 20;
 const MAX_IMAGES = 9;
 const MAX_IMAGE_URL_LEN = 500;
+// 允许标记"适合大一新生"的板块：3=学习交流，4=项目组队
+const FRESHMAN_BOARD_IDS = [3, 4];
 
 const store = (() => {
   const K_USER = 'campus.user';
@@ -137,6 +139,7 @@ const store = (() => {
       comment_count: commentCount,
       like_count: likeCount,
       liked: meId !== null && (post.like_user_ids || []).indexOf(meId) >= 0,
+      freshman_friendly: post.freshman_friendly === true, // 历史数据无此字段，默认 false
     });
   }
 
@@ -159,6 +162,9 @@ const store = (() => {
           (p.title + '\n' + p.content).toLowerCase().indexOf(kw) >= 0
         );
       }
+    }
+    if (opts.freshmanOnly) {
+      posts = posts.filter((p) => p.freshman_friendly === true);
     }
 
     const items = posts.map((p) => decoratePost(p, meId));
@@ -195,6 +201,9 @@ const store = (() => {
     const title = validateTitle(data.title);
     const content = validateContent(data.content);
     const images = validateImages(data.images);
+    // 仅学习交流/项目组队板块允许标记新生推荐，其余强制 false
+    const freshmanFriendly =
+      FRESHMAN_BOARD_IDS.indexOf(boardId) >= 0 && data.freshmanFriendly === true;
 
     const now = new Date().toISOString();
     const post = {
@@ -205,6 +214,7 @@ const store = (() => {
       title,
       content,
       images,
+      freshman_friendly: freshmanFriendly,
       created_at: now,
       updated_at: now,
       like_user_ids: [],
@@ -223,10 +233,17 @@ const store = (() => {
       const boardId = Number(data.boardId);
       assert(BOARDS.some((b) => b.id === boardId), '请选择有效的板块');
       post.board_id = boardId;
+      if (FRESHMAN_BOARD_IDS.indexOf(boardId) < 0) {
+        post.freshman_friendly = false; // 切换到非支持板块自动清除标记
+      }
     }
     if (data.title !== undefined) post.title = validateTitle(data.title);
     if (data.content !== undefined) post.content = validateContent(data.content);
     if (data.images !== undefined) post.images = validateImages(data.images);
+    if (data.freshmanFriendly !== undefined) {
+      post.freshman_friendly =
+        FRESHMAN_BOARD_IDS.indexOf(post.board_id) >= 0 && data.freshmanFriendly === true;
+    }
     post.updated_at = new Date().toISOString();
     setPosts(posts);
     return post;
@@ -345,6 +362,7 @@ const store = (() => {
 
   return {
     BOARDS,
+    FRESHMAN_BOARD_IDS,
     PAGE_SIZE,
     MAX_IMAGES,
     init,

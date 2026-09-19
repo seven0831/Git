@@ -142,6 +142,26 @@ body {
   font-weight: 600;
 }
 
+.toggle-freshman {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.toggle-freshman:hover { border-color: #0e9f6e; color: #0e9f6e; }
+
+.toggle-freshman.active {
+  background: #e8f8ef;
+  border-color: #0e9f6e;
+  color: #0e9f6e;
+  font-weight: 600;
+}
+
 /* ---------- 按钮 ---------- */
 .btn {
   display: inline-flex;
@@ -211,6 +231,16 @@ body {
   background: #eef3ff;
   color: var(--primary);
   font-size: 12px;
+}
+
+.freshman-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: #e8f8ef;
+  color: #0e9f6e;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .post-excerpt {
@@ -521,6 +551,28 @@ body {
 }
 
 .image-url-row button:hover { color: var(--danger); }
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #0e9f6e;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: #e8f8ef;
+  border-radius: 8px;
+  margin: 4px 0 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input {
+  width: auto;
+  margin: 0;
+  accent-color: #0e9f6e;
+  cursor: pointer;
+}
 
 .modal-actions {
   display: flex;
