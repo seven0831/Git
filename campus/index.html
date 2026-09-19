@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>校园交流平台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <header class="topbar">
+    <a class="brand" href="#/">校园交流平台</a>
+    <div class="topbar-right">
+      <span id="nickname-btn" class="nickname hidden" title="修改昵称"></span>
+    </div>
+  </header>
+
+  <main id="app" class="container"></main>
+
+  <!-- 昵称设置弹层 -->
+  <div id="nickname-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 id="nickname-title">设置昵称</h2>
+      <p id="nickname-tip" class="modal-tip">首次使用，请设置你的昵称（1–20 字符）</p>
+      <input id="nickname-input" maxlength="20" placeholder="输入昵称" />
+      <p id="nickname-error" class="error-text hidden"></p>
+      <div class="modal-actions">
+        <button id="nickname-cancel" class="btn btn-ghost hidden">取消</button>
+        <button id="nickname-save" class="btn btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 发帖/编辑弹窗 -->
+  <div id="post-modal" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+      <h2 id="post-modal-title">发帖</h2>
+      <label class="field-label" for="post-board">板块</label>
+      <select id="post-board"></select>
+      <label class="field-label" for="post-title">标题</label>
+      <input id="post-title" maxlength="50" placeholder="1–50 字" />
+      <label class="field-label" for="post-content">正文</label>
+      <textarea id="post-content" rows="6" maxlength="5000" placeholder="1–5000 字"></textarea>
+      <label class="field-label">外链图片（可选，最多 9 张）</label>
+      <div id="post-images"></div>
+      <button id="post-add-image" class="btn btn-ghost btn-sm" type="button">+ 添加图片链接</button>
+      <p id="post-error" class="error-text hidden"></p>
+      <div class="modal-actions">
+        <button id="post-cancel" class="btn btn-ghost">取消</button>
+        <button id="post-save" class="btn btn-primary">发布</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 轻提示 -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="store.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
