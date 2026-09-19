@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>活动详情 - 校园活动机会平台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">🎓 校园活动机会平台</a>
+    <nav class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="list.html">活动列表</a>
+      <a href="publish.html">发布活动</a>
+      <a href="list.html?fav=1">❤ 我的收藏</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div id="detail-root"></div>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    'use strict';
+
+    (async () => {
+      await db.init();
+      const id = new URLSearchParams(location.search).get('id');
+      const a = db.getActivity(id);
+      const root = document.getElementById('detail-root');
+
+      if (!a) {
+        root.innerHTML =
+          '<p class="empty">活动不存在或已被删除</p>' +
+          '<p class="empty"><a href="list.html">← 返回活动列表</a></p>';
+        return;
+      }
+
+      const status = db.statusOf(a);
+      const faved = db.isFavorite(a.id);
+      const signups = db.getSignups(a.id);
+      const statusBadge =
+        status === 'urgent'
+          ? '<span class="badge badge-urgent">⏰ 即将截止 · ' + db.escapeHtml(db.remainText(a)) + '</span>'
+          : status === 'expired'
+            ? '<span class="badge badge-expired">已结束</span>'
+            : '<span class="badge badge-open">报名中</span>';
+
+      root.innerHTML =
+        '<a class="back-link" href="list.html">← 返回活动列表</a>' +
+        '<div class="detail-card">' +
+        '<div class="card-meta">' +
+        '<span class="badge category-badge" data-cat="' + db.escapeHtml(a.category) + '">' + db.escapeHtml(a.category) + '</span>' +
+        statusBadge +
+        (faved ? '<span class="badge badge-fav">❤ 已收藏</span>' : '') +
+        '</div>' +
+        '<h1>' + db.escapeHtml(a.name) + '</h1>' +
+        '<table class="detail-table">' +
+        '<tr><th>编号</th><td>#' + db.escapeHtml(a.id) + '</td></tr>' +
+        '<tr><th>活动名称</th><td>' + db.escapeHtml(a.name) + '</td></tr>' +
+        '<tr><th>举办时间</th><td>' + db.escapeHtml(a.holdTime) + '</td></tr>' +
+        '<tr><th>报名截止时间</th><td>' + db.escapeHtml(a.deadline) + '</td></tr>' +
+        '<tr><th>面向对象</th><td>' + db.escapeHtml(a.audience) + '</td></tr>' +
+        '<tr><th>地点</th><td>' + db.escapeHtml(a.place || '未注明') + '</td></tr>' +
+        '<tr><th>内容简介</th><td>' + db.escapeHtml(a.remark) + '</td></tr>' +
+        '</table>' +
+        '<div class="signup-box">' +
+        '<div class="signup-title">🙋 报名 <span class="signup-count" id="signup-count">' + signups.length + ' 人已报名</span></div>' +
+        (status === 'expired'
+          ? '<p class="signup-closed">该活动报名已截止，不再接受报名</p>'
+          : '<div class="signup-form">' +
+            '<input type="text" id="signup-name" maxlength="20" placeholder="输入你的姓名（1–20 字）" />' +
+            '<button class="btn btn-primary" id="signup-btn">立即报名</button>' +
+            '</div>' +
+            '<p class="form-error hidden" id="signup-error"></p>') +
+        (signups.length
+          ? '<div class="signup-names" id="signup-names">' +
+            signups.map((n) => '<span class="name-chip">' + db.escapeHtml(n) + '</span>').join('') +
+            '</div>'
+          : '') +
+        '</div>' +
+        '<p style="margin-top:16px">' +
+        '<button class="btn btn-primary" id="fav-toggle">' + (faved ? '❤ 已收藏，点击取消' : '♡ 收藏此活动') + '</button>' +
+        '</p>' +
+        '</div>';
+
+      // 报名交互
+      const signupBtn = document.getElementById('signup-btn');
+      if (signupBtn) {
+        const signupName = document.getElementById('signup-name');
+        const signupError = document.getElementById('signup-error');
+        const doSignup = () => {
+          const id2 = new URLSearchParams(location.search).get('id');
+          try {
+            const r = db.signup(id2, signupName.value);
+            document.getElementById('signup-count').textContent = r.count + ' 人已报名';
+            let box = document.getElementById('signup-names');
+            if (!box) {
+              box = document.createElement('div');
+              box.className = 'signup-names';
+              box.id = 'signup-names';
+              document.querySelector('.signup-box').appendChild(box);
+            }
+            box.insertAdjacentHTML('beforeend', '<span class="name-chip">' + db.escapeHtml(r.names[r.names.length - 1]) + '</span>');
+            signupError.classList.add('hidden');
+            signupName.value = '';
+            signupName.placeholder = '🎉 报名成功，可继续添加';
+          } catch (err2) {
+            signupError.textContent = err2.message;
+            signupError.classList.remove('hidden');
+          }
+        };
+        signupBtn.addEventListener('click', doSignup);
+        signupName.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') doSignup();
+        });
+        signupName.addEventListener('input', () => {
+          signupError.classList.add('hidden');
+        });
+      }
+    })();
+
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#fav-toggle')) {
+        const id = new URLSearchParams(location.search).get('id');
+        const r = db.toggleFavorite(id);
+        const btn = document.getElementById('fav-toggle');
+        btn.textContent = r.faved ? '❤ 已收藏，点击取消' : '♡ 收藏此活动';
+      }
+    });
+  </script>
+
+  <footer class="footer">🎓 校园活动机会平台 · 纯前端演示 · 数据保存在浏览器 localStorage</footer>
+</body>
+</html>

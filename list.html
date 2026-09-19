@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>活动列表 - 校园活动机会平台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">🎓 校园活动机会平台</a>
+    <nav class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="list.html" class="active">活动列表</a>
+      <a href="publish.html">发布活动</a>
+      <a href="list.html?fav=1">❤ 我的收藏</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h2 class="section-title">📋 活动列表 <span class="count" id="list-count"></span></h2>
+
+    <div class="filter-bar" id="filter-bar"></div>
+
+    <div id="activity-list"></div>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    'use strict';
+
+    function getParams() {
+      return new URLSearchParams(location.search);
+    }
+
+    // 渲染单张活动卡片
+    function renderCard(a) {
+      const status = db.statusOf(a);
+      const faved = db.isFavorite(a.id);
+      const badges = [];
+      badges.push('<span class="badge category-badge" data-cat="' + db.escapeHtml(a.category) + '">' + db.escapeHtml(a.category) + '</span>');
+      if (status === 'urgent') badges.push('<span class="badge badge-urgent">⏰ 即将截止</span>');
+      if (status === 'expired') badges.push('<span class="badge badge-expired">已结束</span>');
+      return (
+        '<div class="activity-card' + (status === 'urgent' ? ' urgent' : '') + (status === 'expired' ? ' expired' : '') + '" data-id="' + a.id + '" data-cat="' + db.escapeHtml(a.category) + '">' +
+        '<div class="card-top">' +
+        '<h3 class="activity-title">' + db.escapeHtml(a.name) + '</h3>' +
+        '<button class="fav-btn' + (faved ? ' faved' : '') + '" data-fav="' + a.id + '" title="收藏">' + (faved ? '♥' : '♡') + '</button>' +
+        '</div>' +
+        '<div class="card-meta">' + badges.join('') +
+        '<span class="field">开展：<b>' + db.escapeHtml(a.holdTime) + '</b></span>' +
+        '<span class="field">截止：<b>' + db.escapeHtml(a.deadline) + '</b></span>' +
+        '<span class="field">面向：<b>' + db.escapeHtml(a.audience) + '</b></span>' +
+        (status === 'urgent' ? '<span class="badge badge-urgent">⏳ ' + db.escapeHtml(db.remainText(a)) + '</span>' : '') +
+        '</div>' +
+        '</div>'
+      );
+    }
+
+    function renderFilterBar(cat, fav, sort) {
+      const p = getParams();
+      let html = '';
+      html += '<button class="filter-tag' + (cat === '' && !fav ? ' active' : '') + '" data-cat="">全部</button>';
+      db.CATEGORIES.forEach((c) => {
+        html += '<button class="filter-tag' + (cat === c ? ' active' : '') + '" data-cat="' + encodeURIComponent(c) + '">' + db.escapeHtml(c) + '</button>';
+      });
+      html += '<button class="filter-tag fav-tag' + (fav ? ' active' : '') + '" data-fav="1">❤ 我的收藏</button>';
+      html += '<button class="sort-btn' + (sort ? ' active' : '') + '" data-sort="1">⏱ 按截止时间排序</button>';
+      document.getElementById('filter-bar').innerHTML = html;
+    }
+
+    function apply() {
+      const p = getParams();
+      const cat = p.get('cat') || '';
+      const fav = p.get('fav') === '1';
+      const sort = p.get('sort') === 'deadline';
+
+      renderFilterBar(cat, fav, sort);
+
+      let list = db.getActivities();
+      if (cat) list = list.filter((a) => a.category === cat);
+      if (fav) list = list.filter((a) => db.isFavorite(a.id));
+      if (sort) list = db.sortByDeadline(list);
+
+      document.getElementById('list-count').textContent =
+        '共 ' + list.length + ' 条' + (fav ? '（我的收藏）' : '');
+      document.getElementById('activity-list').innerHTML = list.length
+        ? list.map(renderCard).join('')
+        : '<p class="empty">' + (fav ? '还没有收藏任何活动，点击卡片上的 ♡ 收藏吧～' : '暂无符合条件的活动') + '</p>';
+    }
+
+    (async () => {
+      await db.init();
+      apply();
+    })();
+
+    // 筛选与排序：更新 URL（刷新可保持状态）
+    document.getElementById('filter-bar').addEventListener('click', (e) => {
+      const catBtn = e.target.closest('[data-cat]');
+      if (catBtn) {
+        const p = getParams();
+        const c = catBtn.dataset.cat;
+        if (c) p.set('cat', c); else p.delete('cat');
+        p.delete('fav');
+        location.search = p.toString();
+        return;
+      }
+      const favBtn = e.target.closest('[data-fav]');
+      if (favBtn) {
+        const p = getParams();
+        if (p.get('fav') === '1') p.delete('fav'); else p.set('fav', '1');
+        location.search = p.toString();
+        return;
+      }
+      const sortBtn = e.target.closest('[data-sort]');
+      if (sortBtn) {
+        const p = getParams();
+        if (p.get('sort') === 'deadline') p.delete('sort'); else p.set('sort', 'deadline');
+        location.search = p.toString();
+        return;
+      }
+    });
+
+    // 卡片点击跳详情；收藏按钮不触发跳转
+    document.addEventListener('click', (e) => {
+      const favBtn = e.target.closest('[data-fav]');
+      if (favBtn) {
+        e.stopPropagation();
+        const r = db.toggleFavorite(favBtn.dataset.fav);
+        favBtn.textContent = r.faved ? '♥' : '♡';
+        favBtn.classList.toggle('faved', r.faved);
+        if (getParams().get('fav') === '1') apply(); // 收藏视图下即时刷新
+        return;
+      }
+      const card = e.target.closest('.activity-card');
+      if (card) {
+        location.href = 'detail.html?id=' + card.dataset.id;
+      }
+    });
+  </script>
+
+  <footer class="footer">🎓 校园活动机会平台 · 纯前端演示 · 数据保存在浏览器 localStorage</footer>
+</body>
+</html>
