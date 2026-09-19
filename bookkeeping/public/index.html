@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>记账本</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">💰 记账本</div>
+    <nav class="tabs">
+      <button class="tab active" data-view="ledger">记账</button>
+      <button class="tab" data-view="budget">预算</button>
+      <button class="tab" data-view="recurring">周期记账</button>
+      <button class="tab" data-view="categories">分类管理</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 记账 -->
+    <section id="view-ledger" class="view active">
+      <div class="summary-cards" id="ledger-summary"></div>
+      <div class="toolbar">
+        <input type="month" id="ledger-month" />
+        <select id="ledger-type">
+          <option value="">全部类型</option>
+          <option value="income">收入</option>
+          <option value="expense">支出</option>
+        </select>
+        <select id="ledger-category"><option value="">全部分类</option></select>
+        <input type="search" id="ledger-keyword" placeholder="搜索备注/金额" />
+        <button class="primary" id="ledger-add">＋ 记一笔</button>
+      </div>
+      <div class="list" id="ledger-list"></div>
+      <div class="pager" id="ledger-pager"></div>
+    </section>
+
+    <!-- 预算 -->
+    <section id="view-budget" class="view">
+      <div class="toolbar">
+        <input type="month" id="budget-month" />
+        <button class="primary" id="budget-add">＋ 新增预算</button>
+      </div>
+      <div class="overall-card" id="budget-overall"></div>
+      <div class="list" id="budget-list"></div>
+    </section>
+
+    <!-- 周期记账 -->
+    <section id="view-recurring" class="view">
+      <div class="toolbar">
+        <button class="primary" id="recurring-add">＋ 新增规则</button>
+        <button id="recurring-generate">立即生成到期记录</button>
+      </div>
+      <div class="list" id="recurring-list"></div>
+    </section>
+
+    <!-- 分类管理 -->
+    <section id="view-categories" class="view">
+      <div class="toolbar">
+        <button class="primary" id="category-add">＋ 新增分类</button>
+      </div>
+      <div class="list" id="category-list"></div>
+    </section>
+  </main>
+
+  <dialog id="modal"></dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>
