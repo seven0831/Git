@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>校园活动机会平台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">校园活动机会平台</a>
+    <nav class="nav-links">
+      <a href="index.html" class="active">首页</a>
+      <a href="list.html">活动列表</a>
+      <a href="publish.html">发布活动</a>
+      <a href="list.html?fav=1">❤ 我的收藏</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>校园活动机会平台</h1>
+      <p>面向在校大学新生 · 发现竞赛、讲座、学习小组与招募机会</p>
+    </section>
+
+    <section>
+      <h2 class="section-title">⏰ 即将截止报名 <span class="count" id="urgent-count"></span></h2>
+      <div id="urgent-list"></div>
+    </section>
+
+    <section>
+      <h2 class="section-title">📋 更多活动 <span class="count" id="all-count"></span></h2>
+      <div id="all-list"></div>
+    </section>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    'use strict';
+
+    // 渲染单张活动卡片（返回 HTML 字符串）
+    function renderCard(a) {
+      const status = db.statusOf(a);
+      const faved = db.isFavorite(a.id);
+      const urgentCls = status === 'urgent' ? ' urgent' : '';
+      const expiredCls = status === 'expired' ? ' expired' : '';
+      const badges = [];
+      badges.push('<span class="badge category-badge">' + db.escapeHtml(a.category) + '</span>');
+      if (status === 'urgent') {
+        badges.push('<span class="badge badge-urgent">⏰ 即将截止</span>');
+      } else if (status === 'expired') {
+        badges.push('<span class="badge badge-expired">已结束</span>');
+      }
+      return (
+        '<div class="activity-card' + urgentCls + expiredCls + '" data-id="' + a.id + '">' +
+        '<div class="card-top">' +
+        '<h3 class="activity-title">' + db.escapeHtml(a.name) + '</h3>' +
+        '<button class="fav-btn' + (faved ? ' faved' : '') + '" data-fav="' + a.id + '" title="收藏">' + (faved ? '♥' : '♡') + '</button>' +
+        '</div>' +
+        '<div class="card-meta">' + badges.join('') +
+        '<span class="field">开展：<b>' + db.escapeHtml(a.holdTime) + '</b></span>' +
+        '<span class="field">截止：<b>' + db.escapeHtml(a.deadline) + '</b></span>' +
+        '<span class="field">面向：<b>' + db.escapeHtml(a.audience) + '</b></span>' +
+        (status === 'urgent' ? '<span class="badge badge-urgent">' + db.escapeHtml(db.remainText(a)) + '</span>' : '') +
+        '</div>' +
+        '</div>'
+      );
+    }
+
+    (async () => {
+      const list = await db.init();
+      if (list.length === 0) {
+        document.getElementById('urgent-list').innerHTML =
+          '<p class="empty">数据加载失败：请通过 http 方式访问本页面（如本地服务器），或检查 activities.json。</p>';
+        return;
+      }
+
+      // 即将截止报名：3 天内截止，按截止时间升序，最多 6 条
+      const urgent = db.getUrgent();
+      document.getElementById('urgent-count').textContent = '共 ' + urgent.length + ' 条';
+      document.getElementById('urgent-list').innerHTML = urgent.length
+        ? urgent.slice(0, 6).map(renderCard).join('')
+        : '<p class="empty">暂无 3 天内截止报名的活动</p>';
+
+      // 更多活动：全部（过期已标记"已结束"）
+      document.getElementById('all-count').textContent = '共 ' + list.length + ' 条';
+      document.getElementById('all-list').innerHTML = list.map(renderCard).join('');
+    })();
+
+    // 卡片点击跳详情；收藏按钮不触发跳转
+    document.addEventListener('click', (e) => {
+      const favBtn = e.target.closest('[data-fav]');
+      if (favBtn) {
+        e.stopPropagation();
+        const r = db.toggleFavorite(favBtn.dataset.fav);
+        favBtn.textContent = r.faved ? '♥' : '♡';
+        favBtn.classList.toggle('faved', r.faved);
+        return;
+      }
+      const card = e.target.closest('.activity-card');
+      if (card) {
+        location.href = 'detail.html?id=' + card.dataset.id;
+      }
+    });
+  </script>
+</body>
+</html>

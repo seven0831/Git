@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>发布活动 - 校园活动机会平台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">校园活动机会平台</a>
+    <nav class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="list.html">活动列表</a>
+      <a href="publish.html" class="active">发布活动</a>
+      <a href="list.html?fav=1">❤ 我的收藏</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="form-card">
+      <h1>📢 发布校园活动</h1>
+      <form id="publish-form" novalidate>
+        <div class="form-group" id="g-name">
+          <label>活动名称 <span class="req">*</span></label>
+          <input type="text" id="f-name" maxlength="50" placeholder="如：Python 零基础入门工作坊" />
+          <p class="form-error hidden" id="e-name"></p>
+        </div>
+
+        <div class="form-group" id="g-category">
+          <label>活动分类 <span class="req">*</span></label>
+          <select id="f-category">
+            <option value="">请选择分类</option>
+            <option>竞赛</option>
+            <option>讲座分享</option>
+            <option>学习小组</option>
+            <option>招募</option>
+            <option>学生自发</option>
+            <option>通知</option>
+          </select>
+          <p class="form-error hidden" id="e-category"></p>
+        </div>
+
+        <div class="form-group" id="g-holdTime">
+          <label>举办时间 <span class="req">*</span></label>
+          <input type="text" id="f-holdTime" maxlength="100" placeholder="如：10月10日起每周六 19:00，共 4 周" />
+          <p class="form-error hidden" id="e-holdTime"></p>
+        </div>
+
+        <div class="form-group" id="g-deadline">
+          <label>报名截止日期 <span class="req">*</span></label>
+          <input type="datetime-local" id="f-deadline" />
+          <p class="form-error hidden" id="e-deadline"></p>
+        </div>
+
+        <div class="form-group" id="g-audience">
+          <label>面向人群 <span class="req">*</span></label>
+          <input type="text" id="f-audience" maxlength="50" placeholder="如：大一新生、零基础均可" />
+          <p class="form-error hidden" id="e-audience"></p>
+        </div>
+
+        <div class="form-group" id="g-place">
+          <label>地点</label>
+          <input type="text" id="f-place" maxlength="100" placeholder="选填，如：明德楼 B203 / 线上" />
+          <p class="form-error hidden" id="e-place"></p>
+        </div>
+
+        <div class="form-group" id="g-remark">
+          <label>活动简介 <span class="req">*</span></label>
+          <textarea id="f-remark" maxlength="500" placeholder="介绍活动内容、报名方式等（1–500 字）"></textarea>
+          <p class="form-error hidden" id="e-remark"></p>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%">发布活动</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- 成功弹窗 -->
+  <div id="success-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="icon">🎉</div>
+      <h2>发布成功！</h2>
+      <p id="success-text">新活动已加入活动库</p>
+      <div>
+        <a href="list.html" class="btn btn-primary">去列表页查看</a>
+        <button class="btn btn-ghost" id="success-close" style="margin-left:8px">继续发布</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="common.js"></script>
+  <script>
+    'use strict';
+
+    const form = document.getElementById('publish-form');
+    const fields = {
+      name: { el: document.getElementById('f-name'), group: 'g-name', err: 'e-name' },
+      category: { el: document.getElementById('f-category'), group: 'g-category', err: 'e-category' },
+      holdTime: { el: document.getElementById('f-holdTime'), group: 'g-holdTime', err: 'e-holdTime' },
+      deadline: { el: document.getElementById('f-deadline'), group: 'g-deadline', err: 'e-deadline' },
+      audience: { el: document.getElementById('f-audience'), group: 'g-audience', err: 'e-audience' },
+      place: { el: document.getElementById('f-place'), group: 'g-place', err: 'e-place' },
+      remark: { el: document.getElementById('f-remark'), group: 'g-remark', err: 'e-remark' },
+    };
+
+    function setError(key, message) {
+      const f = fields[key];
+      const group = document.getElementById(f.group);
+      const err = document.getElementById(f.err);
+      group.classList.toggle('invalid', !!message);
+      err.textContent = message || '';
+      err.classList.toggle('hidden', !message);
+    }
+
+    function clearErrors() {
+      Object.keys(fields).forEach((k) => setError(k, ''));
+    }
+
+    function validate() {
+      clearErrors();
+      let ok = true;
+      const fail = (key, msg) => { setError(key, msg); ok = false; };
+
+      const name = fields.name.el.value.trim();
+      if (name.length < 1 || name.length > 50) fail('name', '活动名称需为 1–50 字');
+
+      if (!fields.category.el.value) fail('category', '请选择活动分类');
+
+      if (!fields.holdTime.el.value.trim()) fail('holdTime', '请填写举办时间');
+
+      const deadlineRaw = fields.deadline.el.value;
+      if (!deadlineRaw) {
+        fail('deadline', '请选择报名截止日期');
+      } else if (new Date(deadlineRaw) < new Date()) {
+        fail('deadline', '报名截止日期不能早于当前时间');
+      }
+
+      if (!fields.audience.el.value.trim()) fail('audience', '请填写面向人群');
+
+      if (fields.place.el.value.trim().length > 100) fail('place', '地点最多 100 字');
+
+      const remark = fields.remark.el.value.trim();
+      if (remark.length < 1 || remark.length > 500) fail('remark', '活动简介需为 1–500 字');
+
+      return ok;
+    }
+
+    function deadlineToText(raw) {
+      // datetime-local "2026-09-24T22:00" → "2026-09-24 22:00"
+      return raw.replace('T', ' ');
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!validate()) return;
+
+      try {
+        const activity = db.addActivity({
+          name: fields.name.el.value,
+          category: fields.category.el.value,
+          holdTime: fields.holdTime.el.value,
+          deadline: deadlineToText(fields.deadline.el.value),
+          audience: fields.audience.el.value,
+          place: fields.place.el.value,
+          remark: fields.remark.el.value,
+        });
+        document.getElementById('success-text').textContent =
+          '「' + activity.name + '」已加入活动库，快去列表页看看吧！';
+        document.getElementById('success-modal').classList.remove('hidden');
+        form.reset();
+        clearErrors();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById('success-close').addEventListener('click', () => {
+      document.getElementById('success-modal').classList.add('hidden');
+    });
+
+    // 输入时清除对应错误提示
+    Object.values(fields).forEach((f) => {
+      f.el.addEventListener('input', () => setError(Object.keys(fields).find((k) => fields[k] === f), ''));
+    });
+
+    db.init();
+  </script>
+</body>
+</html>

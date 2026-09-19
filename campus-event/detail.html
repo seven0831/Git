@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>活动详情 - 校园活动机会平台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">校园活动机会平台</a>
+    <nav class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="list.html">活动列表</a>
+      <a href="publish.html">发布活动</a>
+      <a href="list.html?fav=1">❤ 我的收藏</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div id="detail-root"></div>
+  </main>
+
+  <script src="common.js"></script>
+  <script>
+    'use strict';
+
+    (async () => {
+      await db.init();
+      const id = new URLSearchParams(location.search).get('id');
+      const a = db.getActivity(id);
+      const root = document.getElementById('detail-root');
+
+      if (!a) {
+        root.innerHTML =
+          '<p class="empty">活动不存在或已被删除</p>' +
+          '<p class="empty"><a href="list.html">← 返回活动列表</a></p>';
+        return;
+      }
+
+      const status = db.statusOf(a);
+      const faved = db.isFavorite(a.id);
+      const statusBadge =
+        status === 'urgent'
+          ? '<span class="badge badge-urgent">⏰ 即将截止 · ' + db.escapeHtml(db.remainText(a)) + '</span>'
+          : status === 'expired'
+            ? '<span class="badge badge-expired">已结束</span>'
+            : '<span class="badge badge-open">报名中</span>';
+
+      root.innerHTML =
+        '<a class="back-link" href="list.html">← 返回活动列表</a>' +
+        '<div class="detail-card">' +
+        '<div class="card-meta">' +
+        '<span class="badge category-badge">' + db.escapeHtml(a.category) + '</span>' +
+        statusBadge +
+        (faved ? '<span class="badge badge-fav">❤ 已收藏</span>' : '') +
+        '</div>' +
+        '<h1>' + db.escapeHtml(a.name) + '</h1>' +
+        '<table class="detail-table">' +
+        '<tr><th>编号</th><td>#' + db.escapeHtml(a.id) + '</td></tr>' +
+        '<tr><th>活动名称</th><td>' + db.escapeHtml(a.name) + '</td></tr>' +
+        '<tr><th>举办时间</th><td>' + db.escapeHtml(a.holdTime) + '</td></tr>' +
+        '<tr><th>报名截止时间</th><td>' + db.escapeHtml(a.deadline) + '</td></tr>' +
+        '<tr><th>面向对象</th><td>' + db.escapeHtml(a.audience) + '</td></tr>' +
+        '<tr><th>地点</th><td>' + db.escapeHtml(a.place || '未注明') + '</td></tr>' +
+        '<tr><th>内容简介</th><td>' + db.escapeHtml(a.remark) + '</td></tr>' +
+        '</table>' +
+        '<p style="margin-top:16px">' +
+        '<button class="btn btn-primary" id="fav-toggle">' + (faved ? '❤ 已收藏，点击取消' : '♡ 收藏此活动') + '</button>' +
+        '</p>' +
+        '</div>';
+    })();
+
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#fav-toggle')) {
+        const id = new URLSearchParams(location.search).get('id');
+        const r = db.toggleFavorite(id);
+        const btn = document.getElementById('fav-toggle');
+        btn.textContent = r.faved ? '❤ 已收藏，点击取消' : '♡ 收藏此活动';
+      }
+    });
+  </script>
+</body>
+</html>

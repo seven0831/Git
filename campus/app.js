@@ -265,6 +265,7 @@
       keyword: listState.keyword,
       sort: listState.sort,
       page: listState.page,
+      freshmanOnly: listState.freshmanOnly,
     });
     const totalPages = Math.max(1, Math.ceil(r.total / r.pageSize));
     if (listState.page > totalPages) {
@@ -274,6 +275,7 @@
         keyword: listState.keyword,
         sort: listState.sort,
         page: listState.page,
+        freshmanOnly: listState.freshmanOnly,
       });
     }
 
@@ -296,6 +298,7 @@
       '<button data-sort="latest" class="' + (listState.sort === 'latest' ? 'active' : '') + '">最新</button>' +
       '<button data-sort="hot" class="' + (listState.sort === 'hot' ? 'active' : '') + '">最热</button>' +
       '</div>' +
+      '<button id="btn-freshman" class="toggle-freshman' + (listState.freshmanOnly ? ' active' : '') + '">🎓 新生推荐</button>' +
       '<button id="btn-new-post" class="btn btn-primary">发帖</button>' +
       '</div>' +
       '</section>' +
@@ -303,7 +306,9 @@
 
     const listEl = document.getElementById('post-list');
     if (r.items.length === 0) {
-      listEl.innerHTML = '<p class="empty">暂无帖子，快来发第一帖吧～</p>';
+      listEl.innerHTML = listState.freshmanOnly
+        ? '<p class="empty">暂无适合大一新生的帖子，去学习交流/项目组队发一帖吧～</p>'
+        : '<p class="empty">暂无帖子，快来发第一帖吧～</p>';
     } else {
       listEl.innerHTML = r.items.map(renderPostCard).join('');
     }
@@ -379,6 +384,7 @@
       '<div class="detail-card">' +
       '<div class="post-meta">' +
       '<span class="board-badge">' + escapeHtml(boardName(post.board_id)) + '</span>' +
+      (post.freshman_friendly ? '<span class="freshman-badge">🎓 新生推荐</span>' : '') +
       '<span>' + escapeHtml(displayName(post)) + '</span>' +
       '<span>' + formatDate(post.created_at) + '</span>' +
       edited +
@@ -448,6 +454,12 @@
     }
     if (e.target.closest('#btn-new-post')) {
       openPostModal(null);
+      return;
+    }
+    if (e.target.closest('#btn-freshman')) {
+      listState.freshmanOnly = !listState.freshmanOnly;
+      listState.page = 1;
+      renderList();
       return;
     }
     const sortBtn = e.target.closest('[data-sort]');
